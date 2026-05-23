@@ -6,7 +6,12 @@ public class ConfigLoader {
     
     public static String read(String path) throws IOException {
         byte[] fileBytes = Files.readAllBytes(Paths.get(path));
-        String content = new String(fileBytes);
-        return content;
+        return new String(fileBytes);
     }
+    
+    public static ServerConfig parse(String json) {
+        ServerConfig config = new ServerConfig();
+        return config;
+    }
+
 }
