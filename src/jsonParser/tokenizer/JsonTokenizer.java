@@ -1,4 +1,4 @@
-package parser.tokenizer;
+package jsonParser.tokenizer;
 
 import java.util.ArrayList;
 import java.util.List;

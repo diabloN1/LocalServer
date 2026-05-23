@@ -1,4 +1,4 @@
-package parser.tokenizer;
+package jsonParser.tokenizer;
 
 public enum TokenType {
     LBRACE,      // {

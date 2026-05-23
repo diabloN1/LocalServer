@@ -5,8 +5,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 
-import parser.tokenizer.JsonTokenizer;
-import parser.tokenizer.Token;
+import jsonParser.tokenizer.JsonTokenizer;
+import jsonParser.tokenizer.Token;
 
 public class ConfigLoader {
     
