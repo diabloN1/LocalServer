@@ -1,7 +1,9 @@
-package jsonParser.parser;
+package jsonParser;
 
 import java.util.*;
 
+import jsonParser.mapper.Mapper;
+import jsonParser.mapper.ServerConfig;
 import jsonParser.tokenizer.*;
 
 public class Parser {
@@ -9,11 +11,11 @@ public class Parser {
     private List<Token> tokens;
     private int pos = 0;
 
-    public Object parse(List<Token> tokens) {
-        this.tokens = tokens;
+    public ServerConfig parse(String json) {
+        this.tokens = new JsonTokenizer(json).tokenize();
         this.pos = 0;
-
-        return parseValue();
+        
+        return new Mapper().map(parseValue());
     }
 
     private Token peek() {

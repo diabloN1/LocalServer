@@ -1,3 +1,4 @@
+package jsonParser.mapper;
 
 
 import java.util.ArrayList;
