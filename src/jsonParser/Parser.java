@@ -14,8 +14,10 @@ public class Parser {
     public ServerConfig parse(String json) {
         this.tokens = new JsonTokenizer(json).tokenize();
         this.pos = 0;
+
+        Object parsed = parseValue();
         
-        return new Mapper().map(parseValue());
+        return new Mapper().map(parsed);
     }
 
     private Token peek() {

@@ -8,12 +8,4 @@ public class Token {
         this.type = type;
         this.value = value;
     }
-
-    @Override
-    public String toString() {
-        if (value == null)
-            return type.toString();
-
-        return type + "(" + value + ")";
-    }
 }
