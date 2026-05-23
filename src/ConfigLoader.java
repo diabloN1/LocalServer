@@ -1,12 +1,20 @@
+
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
+
+import parser.tokenizer.JsonTokenizer;
+import parser.tokenizer.Token;
 
 public class ConfigLoader {
     
     public static String read(String path) throws IOException {
-        byte[] fileBytes = Files.readAllBytes(Paths.get(path));
-        return new String(fileBytes);
+        String fileContent = new String(Files.readAllBytes(Paths.get(path)));
+        List<Token> item = new JsonTokenizer(fileContent).tokenize();
+        item.forEach(i -> System.out.println(i.toString()));
+        return fileContent;
     }
     
     public static ServerConfig parse(String json) {

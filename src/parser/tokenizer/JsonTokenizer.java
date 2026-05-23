@@ -8,6 +8,73 @@ public class JsonTokenizer {
     private final String input;
     private int pos = 0;
 
+    public JsonTokenizer(String input) {
+        this.input = input;
+    }
+
+    public List<Token> tokenize() {
+        List<Token> tokens = new ArrayList<>();
+
+        while (pos < input.length()) {
+
+            char c = input.charAt(pos);
+
+            switch (c) {
+
+                case '{':
+                    tokens.add(new Token(TokenType.LBRACE, null));
+                    pos++;
+                    break;
+
+                case '}':
+                    tokens.add(new Token(TokenType.RBRACE, null));
+                    pos++;
+                    break;
+
+                case '[':
+                    tokens.add(new Token(TokenType.LBRACKET, null));
+                    pos++;
+                    break;
+
+                case ']':
+                    tokens.add(new Token(TokenType.RBRACKET, null));
+                    pos++;
+                    break;
+
+                case ':':
+                    tokens.add(new Token(TokenType.COLON, null));
+                    pos++;
+                    break;
+
+                case ',':
+                    tokens.add(new Token(TokenType.COMMA, null));
+                    pos++;
+                    break;
+
+                case '"':
+                    tokens.add(readString());
+                    break;
+
+                default:
+
+                    if (Character.isWhitespace(c)) {
+                        pos++;
+                    } else if (Character.isDigit(c) || c == '-') {
+                        tokens.add(readNumber());
+                    } else if (Character.isLetter(c)) {
+                        tokens.add(readKeyword());
+                    } else {
+                        throw new RuntimeException(
+                                "Unexpected character: " + c);
+                    }
+            }
+        }
+
+        tokens.add(new Token(TokenType.EOF, null));
+
+        return tokens;
+    }
+
     private Token readString() {
 
         pos++; // skip "

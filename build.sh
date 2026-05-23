@@ -1,3 +1,3 @@
-javac -d build src/*
-java -cp build/ Main
+javac -d build $(find src -name "*.java")
+java -cp build Main
 rm -rf build
