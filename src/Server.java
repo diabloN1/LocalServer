@@ -1,12 +1,12 @@
-import jsonParser.Parser;
 import jsonParser.mapper.ServerConfig;
 
 public class Server {
+    private final ServerConfig config;
 
-    public void run(String configContent) {
-        ServerConfig config = new Parser().parse(configContent);
+    public Server(ServerConfig config) {
+        this.config = config;
+    }
+    public void start() {
         config.servers.forEach(server -> System.out.println(server));
-
-        
     }
 }

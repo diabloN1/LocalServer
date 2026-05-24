@@ -2,6 +2,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+import jsonParser.Parser;
+import jsonParser.mapper.ServerConfig;
+
 public class Main {
     public static void main(String[] args) {
         String configPath = "config.json";
@@ -10,8 +13,9 @@ public class Main {
         }
         try {
             String fileContent = new String(Files.readAllBytes(Paths.get(configPath)));
+            ServerConfig config = new Parser().parse(fileContent);
 
-            new Server().run(fileContent);
+            new Server(config).start();
         } catch (IOException err) {
             System.err.println(configPath + " file do not have correct format!");
         }
