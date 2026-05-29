@@ -2,9 +2,6 @@ package requestParser;
 
 import java.util.*;
 
-/**
- * Represents a parsed HTTP/1.1 request.
- */
 public class HttpRequest {
 
     public enum ParseState {
@@ -26,20 +23,9 @@ public class HttpRequest {
     private Map<String, String> cookies = new LinkedHashMap<>();
     private byte[] body = new byte[0];
     private ParseState state = ParseState.REQUEST_LINE;
-    private StringBuilder rawBuffer = new StringBuilder();
     private boolean headersComplete = false;
     private int contentLength = -1;
     private boolean chunked = false;
-
-    public void appendRaw(String data) {
-        rawBuffer.append(data);
-    }
-
-    public void appendRawBytes(byte[] data, int len) {
-        for (int i = 0; i < len; i++) {
-            rawBuffer.append((char)(data[i] & 0xFF));
-        }
-    }
 
     // ---- Getters ----
 
@@ -55,7 +41,6 @@ public class HttpRequest {
     public ParseState getState() { return state; }
     public boolean isChunked() { return chunked; }
     public int getContentLength() { return contentLength; }
-    public String getRawBuffer() { return rawBuffer.toString(); }
 
     public String getHeader(String name) {
         return headers.getOrDefault(name.toLowerCase(), null);
@@ -82,7 +67,21 @@ public class HttpRequest {
     public void setChunked(boolean chunked) { this.chunked = chunked; }
     public void setHeadersComplete(boolean complete) { this.headersComplete = complete; }
     public boolean isHeadersComplete() { return headersComplete; }
-    
+
+    public void addHeader(String name, String value) {
+        String lower = name.trim().toLowerCase();
+        headers.put(lower, value.trim());
+        if (lower.equals("content-length")) {
+            try { contentLength = Integer.parseInt(value.trim()); } catch (NumberFormatException ignored) {}
+        }
+        if (lower.equals("transfer-encoding") && value.trim().toLowerCase().contains("chunked")) {
+            chunked = true;
+        }
+        if (lower.equals("cookie")) {
+            parseCookies(value);
+        }
+    }
+
     private void parseQueryParams() {
         if (queryString == null || queryString.isEmpty()) return;
         for (String pair : queryString.split("&")) {
@@ -95,6 +94,15 @@ public class HttpRequest {
         }
     }
 
+    private void parseCookies(String cookieHeader) {
+        for (String part : cookieHeader.split(";")) {
+            int eq = part.indexOf('=');
+            if (eq >= 0) {
+                cookies.put(part.substring(0, eq).trim(), part.substring(eq + 1).trim());
+            }
+        }
+    }
+
     public static String urlDecode(String s) {
         try {
             return java.net.URLDecoder.decode(s, "UTF-8");
@@ -103,5 +111,11 @@ public class HttpRequest {
         }
     }
 
-    
+    public boolean isComplete() { return state == ParseState.COMPLETE; }
+    public boolean hasError() { return state == ParseState.ERROR; }
+
+    @Override
+    public String toString() {
+        return method + " " + uri + " " + httpVersion;
+    }
 }
