@@ -70,7 +70,7 @@ public class HttpRequest {
         if (qIdx >= 0) {
             this.path = uri.substring(0, qIdx);
             this.queryString = uri.substring(qIdx + 1);
-            // parseQueryParams();
+            parseQueryParams();
         } else {
             this.path = uri;
         }
@@ -82,6 +82,26 @@ public class HttpRequest {
     public void setChunked(boolean chunked) { this.chunked = chunked; }
     public void setHeadersComplete(boolean complete) { this.headersComplete = complete; }
     public boolean isHeadersComplete() { return headersComplete; }
+    
+    private void parseQueryParams() {
+        if (queryString == null || queryString.isEmpty()) return;
+        for (String pair : queryString.split("&")) {
+            int eq = pair.indexOf('=');
+            if (eq >= 0) {
+                queryParams.put(urlDecode(pair.substring(0, eq)), urlDecode(pair.substring(eq + 1)));
+            } else {
+                queryParams.put(urlDecode(pair), "");
+            }
+        }
+    }
+
+    public static String urlDecode(String s) {
+        try {
+            return java.net.URLDecoder.decode(s, "UTF-8");
+        } catch (Exception e) {
+            return s;
+        }
+    }
 
     
 }
