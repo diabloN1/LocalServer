@@ -78,7 +78,28 @@ public class RequestParser {
         }
     }
 
+    private void parseBody() {
+        int contentLength = request.getContentLength();
+        if (contentLength <= 0) {
+            request.setState(ParseState.COMPLETE);
+            return;
+        }
 
-    private void parseBody() {}
-    private void parseChunkedBody() {}
+        if (contentLength > maxBodySize) {
+            request.setState(ParseState.ERROR);
+            return;
+        }
+
+        int available = writePos - headerEnd;
+
+        if (available >= contentLength) {
+            byte[] body = new byte[contentLength];
+            System.arraycopy(rawBytes, headerEnd, body, 0, contentLength);
+            request.setBody(body);
+            request.setState(ParseState.COMPLETE);
+        }
+    }
+
+    private void parseChunkedBody() {
+    }
 }
