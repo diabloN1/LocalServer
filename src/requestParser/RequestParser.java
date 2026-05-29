@@ -1,5 +1,7 @@
 package requestParser;
 
+import java.util.Arrays;
+
 public class RequestParser {
     private HttpRequest request;
     private byte[] rawBytes;
@@ -15,9 +17,29 @@ public class RequestParser {
         return request;
     }
 
-    // public boolean parse(byte[] data) {
+    public boolean feed(byte[] data, int length) {
+        if (writePos + length > rawBytes.length) {
+            rawBytes = Arrays.copyOf(rawBytes, rawBytes.length * 2 + length);
+        }
 
-    // }
+        System.arraycopy(data, 0, rawBytes, writePos, length);
+        writePos += length;
+
+        if (request.getState() == ParseState.REQUEST_LINE ||
+                request.getState() == ParseState.HEADERS) {
+            parseHeaderSection();
+        }
+
+        if (request.isHeadersComplete()) {
+            if (request.isChunked()) {
+                parseChunkedBody();
+            } else {
+                parseBody();
+            }
+        }
+
+        return request.isComplete();
+    }
 
     private void parseHeaderSection() {
         String content = new String(rawBytes, 0, writePos);
@@ -56,4 +78,7 @@ public class RequestParser {
         }
     }
 
+
+    private void parseBody() {}
+    private void parseChunkedBody() {}
 }
