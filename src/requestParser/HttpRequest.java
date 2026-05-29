@@ -4,15 +4,6 @@ import java.util.*;
 
 public class HttpRequest {
 
-    public enum ParseState {
-        REQUEST_LINE,
-        HEADERS,
-        BODY,
-        CHUNKED_BODY,
-        COMPLETE,
-        ERROR
-    }
-
     private String method;
     private String uri;
     private String httpVersion;
