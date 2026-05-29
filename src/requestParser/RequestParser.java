@@ -49,8 +49,11 @@ public class RequestParser {
             }
         }
 
-        
-    }
+        request.setHeadersComplete(true);
 
+        if (!request.isChunked() && request.getContentLength() <= 0) {
+            request.setState(ParseState.COMPLETE);
+        }
+    }
 
 }
