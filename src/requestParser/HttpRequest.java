@@ -9,29 +9,88 @@ public class HttpRequest {
     private String httpVersion;
     private String path;
     private String queryString = "";
-    private Map<String, String> headers = new LinkedHashMap<>();
-    private Map<String, String> queryParams = new LinkedHashMap<>();
-    private Map<String, String> cookies = new LinkedHashMap<>();
+
+    final private Map<String, String> headers = new LinkedHashMap<>();
+    final private Map<String, String> queryParams = new LinkedHashMap<>();
+    final private Map<String, String> cookies = new LinkedHashMap<>();
+
     private byte[] body = new byte[0];
-    private ParseState state = ParseState.REQUEST_LINE;
-    private boolean headersComplete = false;
-    private int contentLength = -1;
-    private boolean chunked = false;
+
+    private HttpRequest() {
+    }
+
+    public static HttpRequest fromHeaderRaw(String headerRaw) {
+        HttpRequest req = new HttpRequest();
+
+        String[] lines = headerRaw.split("\r\n", -1);
+        if (lines.length == 0 || lines[0].isEmpty()) {
+            throw new IllegalArgumentException();
+        }
+
+        // Request Line
+        String[] reqLine = lines[0].split(" ", 3);
+        if (reqLine.length != 3)
+            throw new IllegalArgumentException();
+        req.method = reqLine[0].toUpperCase();
+        req.setUri(reqLine[1]);
+        req.httpVersion = reqLine[2];
+
+        // Headers
+        for (int i = 1; i < lines.length; i++) {
+            String line = lines[i];
+            if (line.isEmpty())
+                continue;
+            int colon = line.indexOf(':');
+            if (colon <= 0)
+                throw new IllegalArgumentException();
+
+            String name = line.substring(0, colon).trim().toLowerCase();
+            String value = line.substring(colon + 1).trim();
+            req.headers.put(name, value);
+            if (name.equals("cookie"))
+                req.parseCookies(value);
+        }
+
+        return req;
+    }
 
     // ---- Getters ----
 
-    public String getMethod() { return method; }
-    public String getUri() { return uri; }
-    public String getHttpVersion() { return httpVersion; }
-    public String getPath() { return path; }
-    public String getQueryString() { return queryString; }
-    public Map<String, String> getHeaders() { return headers; }
-    public Map<String, String> getQueryParams() { return queryParams; }
-    public Map<String, String> getCookies() { return cookies; }
-    public byte[] getBody() { return body; }
-    public ParseState getState() { return state; }
-    public boolean isChunked() { return chunked; }
-    public int getContentLength() { return contentLength; }
+    public String getMethod() {
+        return method;
+    }
+
+    public String getUri() {
+        return uri;
+    }
+
+    public String getHttpVersion() {
+        return httpVersion;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public String getQueryString() {
+        return queryString;
+    }
+
+    public Map<String, String> getHeaders() {
+        return headers;
+    }
+
+    public Map<String, String> getQueryParams() {
+        return queryParams;
+    }
+
+    public Map<String, String> getCookies() {
+        return cookies;
+    }
+
+    public byte[] getBody() {
+        return body;
+    }
 
     public String getHeader(String name) {
         return headers.getOrDefault(name.toLowerCase(), null);
@@ -39,42 +98,25 @@ public class HttpRequest {
 
     // ---- Setters (used by parser) ----
 
-    public void setMethod(String method) { this.method = method.toUpperCase(); }
-    public void setUri(String uri) {
-        this.uri = uri;
-        int qIdx = uri.indexOf('?');
-        if (qIdx >= 0) {
-            this.path = uri.substring(0, qIdx);
-            this.queryString = uri.substring(qIdx + 1);
+    private void setUri(String raw) {
+        this.uri = raw;
+        int q = raw.indexOf('?');
+        if (q >= 0) {
+            this.path = raw.substring(0, q);
+            this.queryString = raw.substring(q + 1);
             parseQueryParams();
         } else {
-            this.path = uri;
+            this.path = raw;
         }
     }
-    public void setHttpVersion(String version) { this.httpVersion = version; }
-    public void setState(ParseState state) { this.state = state; }
-    public void setBody(byte[] body) { this.body = body; }
-    public void setContentLength(int len) { this.contentLength = len; }
-    public void setChunked(boolean chunked) { this.chunked = chunked; }
-    public void setHeadersComplete(boolean complete) { this.headersComplete = complete; }
-    public boolean isHeadersComplete() { return headersComplete; }
 
-    public void addHeader(String name, String value) {
-        String lower = name.trim().toLowerCase();
-        headers.put(lower, value.trim());
-        if (lower.equals("content-length")) {
-            try { contentLength = Integer.parseInt(value.trim()); } catch (NumberFormatException ignored) {}
-        }
-        if (lower.equals("transfer-encoding") && value.trim().toLowerCase().contains("chunked")) {
-            chunked = true;
-        }
-        if (lower.equals("cookie")) {
-            parseCookies(value);
-        }
+    public void setBody(byte[] body) {
+        this.body = body;
     }
 
     private void parseQueryParams() {
-        if (queryString == null || queryString.isEmpty()) return;
+        if (queryString == null || queryString.isEmpty())
+            return;
         for (String pair : queryString.split("&")) {
             int eq = pair.indexOf('=');
             if (eq >= 0) {
@@ -101,9 +143,6 @@ public class HttpRequest {
             return s;
         }
     }
-
-    public boolean isComplete() { return state == ParseState.COMPLETE; }
-    public boolean hasError() { return state == ParseState.ERROR; }
 
     @Override
     public String toString() {
