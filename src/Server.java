@@ -6,6 +6,7 @@ public class Server {
     public Server(ServerConfig config) {
         this.config = config;
     }
+
     public void start() {
         config.servers.forEach(server -> System.out.println(server));
     }
