@@ -2,6 +2,7 @@ package requestParser;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
+
 public class RequestParser {
     private final int maxHeaderBytes;
     private final long maxBodyBytes;
@@ -67,12 +68,26 @@ public class RequestParser {
 
                     if (contentLength == 0) {
                         req.setBody(new byte[0]);
-                        state = ParseState.DONE;
                         return ParseResult.COMPLETE;
                     }
 
-
+                    state = ParseState.FIXED_BODY;
+                    continue;
                 }
+                case FIXED_BODY: {
+                    if (in.remaining() < contentLength)
+                        return ParseResult.NEED_MORE;
+
+                    byte[] body = new byte[(int) contentLength];
+                    in.get(body);
+                    req.setBody(body);
+
+                    return ParseResult.COMPLETE;
+                }
+
+                // case CHUNK_SIZE: {
+
+                // }
             }
         }
     }

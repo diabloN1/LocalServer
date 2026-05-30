@@ -6,6 +6,5 @@ public enum ParseState {
     CHUNK_SIZE,
     CHUNK_DATA,
     CHUNK_CRLF,
-    TRAILERS,
-    DONE
+    TRAILERS
 }
