@@ -40,6 +40,12 @@ public class Mapper {
         }
         vs.isDefault = def != null && (Boolean) def;
 
+        // header size
+        vs.clientMaxHeaderSize = asLong(
+                m.get("client_max_header_size"),
+                "client_max_header_size",
+                1048576);
+
         // body size
         vs.clientMaxBodySize = asLong(
                 m.get("client_max_body_size"),

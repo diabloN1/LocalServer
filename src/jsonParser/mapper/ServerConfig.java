@@ -28,7 +28,8 @@ public class ServerConfig {
         public String host;
         public List<Integer> ports = new ArrayList<>();
         public boolean isDefault = false;
-        public long clientMaxBodySize = 1048576; // 1MB default
+        public long clientMaxHeaderSize = 1048576; // 1MB default
+        public long clientMaxBodySize = 1048576;
         public Map<Integer, String> errorPages = new HashMap<>();
         public List<Route> routes = new ArrayList<>();
 

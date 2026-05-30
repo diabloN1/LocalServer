@@ -5,12 +5,14 @@ import java.util.Arrays;
 public class RequestParser {
     private HttpRequest request;
     private byte[] rawBytes;
+    private long maxHeaderSize;
     private long maxBodySize;
-    private int writePos;
+    private int readPos;
     private int headerEnd;
 
-    public RequestParser(long maxBodySize) {
+    public RequestParser(long maxHeaderSize, long maxBodySize) {
         this.maxBodySize = maxBodySize;
+        this.maxHeaderSize = maxHeaderSize;
     }
 
     public HttpRequest getRequest() {
@@ -18,12 +20,17 @@ public class RequestParser {
     }
 
     public boolean feed(byte[] data, int length) {
-        if (writePos + length > rawBytes.length) {
+        if (readPos + length > rawBytes.length) {
             rawBytes = Arrays.copyOf(rawBytes, rawBytes.length * 2 + length);
         }
 
-        System.arraycopy(data, 0, rawBytes, writePos, length);
-        writePos += length;
+        System.arraycopy(data, 0, rawBytes, readPos, length);
+        readPos += length;
+
+        if (!request.isHeadersComplete() && readPos + length > maxHeaderSize) {
+            request.setState(ParseState.ERROR);
+            return false;
+        }
 
         if (request.getState() == ParseState.REQUEST_LINE ||
                 request.getState() == ParseState.HEADERS) {
@@ -42,7 +49,7 @@ public class RequestParser {
     }
 
     private void parseHeaderSection() {
-        String content = new String(rawBytes, 0, writePos);
+        String content = new String(rawBytes, 0, readPos);
         int end = content.indexOf("\r\n\r\n");
         if (end < 0)
             return;
@@ -90,7 +97,7 @@ public class RequestParser {
             return;
         }
 
-        int available = writePos - headerEnd;
+        int available = readPos - headerEnd;
 
         if (available >= contentLength) {
             byte[] body = new byte[contentLength];
