@@ -1,5 +1,6 @@
 package requestParser;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class HttpRequest {
@@ -10,16 +11,18 @@ public class HttpRequest {
     private String path;
     private String queryString = "";
 
-    final private Map<String, String> headers = new LinkedHashMap<>();
-    final private Map<String, String> queryParams = new LinkedHashMap<>();
-    final private Map<String, String> cookies = new LinkedHashMap<>();
+    final Map<String, String> headers = new LinkedHashMap<>();
+    final Map<String, String> queryParams = new LinkedHashMap<>();
+    final Map<String, String> cookies = new LinkedHashMap<>();
 
     private byte[] body = new byte[0];
 
-    private HttpRequest() {}
+    private HttpRequest() {
+    }
 
-    public static HttpRequest fromHeaderRaw(String headerRaw) {
+    public static HttpRequest fromHeaderRaw(byte[] headerBytes) {
         HttpRequest req = new HttpRequest();
+        String headerRaw = new String(headerBytes, StandardCharsets.US_ASCII);
 
         String[] lines = headerRaw.split("\r\n", -1);
         if (lines.length == 0 || lines[0].isEmpty()) {
@@ -75,27 +78,22 @@ public class HttpRequest {
         return queryString;
     }
 
-    public Map<String, String> getHeaders() {
-        return headers;
-    }
-
-    public Map<String, String> getQueryParams() {
-        return queryParams;
-    }
-
-    public Map<String, String> getCookies() {
-        return cookies;
-    }
-
     public byte[] getBody() {
         return body;
     }
 
-    public String getHeader(String name) {
-        return headers.getOrDefault(name.toLowerCase(), null);
+    public int getContentLength() {
+        String v = headers.get("content-length");
+        if (v == null)
+            return -1;
+        try {
+            return Integer.parseInt(v.trim());
+        } catch (NumberFormatException e) {
+            return -1;
+        }
     }
 
-    // ---- Setters (used by parser) ----
+    // ---- Setters ----
 
     private void setUri(String raw) {
         this.uri = raw;
