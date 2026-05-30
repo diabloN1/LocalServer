@@ -16,8 +16,7 @@ public class HttpRequest {
 
     private byte[] body = new byte[0];
 
-    private HttpRequest() {
-    }
+    private HttpRequest() {}
 
     public static HttpRequest fromHeaderRaw(String headerRaw) {
         HttpRequest req = new HttpRequest();
