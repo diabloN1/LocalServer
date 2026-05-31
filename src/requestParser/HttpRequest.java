@@ -14,6 +14,7 @@ public class HttpRequest {
     final Map<String, String> headers = new LinkedHashMap<>();
     final Map<String, String> queryParams = new LinkedHashMap<>();
     final Map<String, String> cookies = new LinkedHashMap<>();
+    final Map<String, String> trailers = new LinkedHashMap<>();
 
     private byte[] body = new byte[0];
 

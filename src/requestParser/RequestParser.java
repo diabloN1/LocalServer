@@ -2,6 +2,7 @@ package requestParser;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 public class RequestParser {
     private final int maxHeaderBytes;
@@ -85,9 +86,89 @@ public class RequestParser {
                     return ParseResult.COMPLETE;
                 }
 
-                // case CHUNK_SIZE: {
+                case CHUNK_SIZE: {
+                    String line = readLineCRLF(in);
 
-                // }
+                    if (line == null)
+                        return ParseResult.NEED_MORE;
+
+                    // Strip chunk extensions
+                    String sizePart = line.split(";", 2)[0].trim();
+                    if (sizePart.isEmpty())
+                        return ParseResult.BAD_REQUEST;
+
+                    int size;
+
+                    try {
+                        size = Integer.parseInt(sizePart);
+                    } catch (NumberFormatException e) {
+                        return ParseResult.BAD_REQUEST;
+                    }
+
+                    if (size < 0)
+                        return ParseResult.BAD_REQUEST;
+
+                    state = currentChunkSize == 0 ? ParseState.TRAILERS : ParseState.CHUNK_DATA;
+                    continue;
+                }
+
+                case CHUNK_DATA: {
+                    if (in.remaining() < currentChunkSize)
+                        return ParseResult.NEED_MORE;
+
+                    if (totalBodyRead + currentChunkSize > maxBodyBytes)
+                        return ParseResult.BODY_TOO_LARGE;
+
+                    byte[] chunk = new byte[currentChunkSize];
+                    in.get(chunk);
+                    chunkOut.write(chunk, 0, chunk.length);
+
+                    totalBodyRead += currentChunkSize;
+
+                    state = ParseState.CHUNK_CRLF;
+                    continue;
+                }
+
+                case CHUNK_CRLF: {
+                    if (in.remaining() < 2)
+                        return ParseResult.NEED_MORE;
+
+                    byte b1 = in.get();
+                    byte b2 = in.get();
+
+                    if (b1 != '\r' || b2 != '\n')
+                        return ParseResult.BAD_REQUEST;
+
+                    currentChunkSize = -1;
+                    state = ParseState.CHUNK_SIZE;
+                    continue;
+                }
+
+                case TRAILERS: {
+                    String line = readLineCRLF(in);
+                    if (line == null)
+                        return ParseResult.NEED_MORE;
+
+                    if (line.isEmpty()) {
+                        req.setBody(chunkOut.toByteArray());
+                        return ParseResult.COMPLETE;
+                    }
+
+                    int colon = line.indexOf(':');
+                    if (colon <= 0)
+                        return ParseResult.BAD_REQUEST;
+
+                    String name = line.substring(0, colon)
+                            .trim()
+                            .toLowerCase();
+
+                    String value = line.substring(colon + 1)
+                            .trim();
+
+                    req.trailers.put(name, value);
+
+                    continue;
+                }
             }
         }
     }
@@ -128,5 +209,22 @@ public class RequestParser {
             }
         }
         return -1;
+    }
+
+    private String readLineCRLF(ByteBuffer in) {
+        int pos = in.position();
+        int lim = in.limit();
+
+        for (int i = pos; i + 1 < lim; i++) {
+            if (in.get(i) == '\r' && in.get(i + 1) == '\n') {
+                int len = i - pos;
+                byte[] bytes = new byte[len];
+                in.get(bytes);
+                in.get(); // consume \r
+                in.get(); // consume \n
+                return new String(bytes, StandardCharsets.US_ASCII);
+            }
+        }
+        return null;
     }
 }
