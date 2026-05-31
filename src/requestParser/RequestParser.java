@@ -1,112 +1,132 @@
 package requestParser;
 
-import java.util.Arrays;
+import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
 
 public class RequestParser {
-    private HttpRequest request;
-    private byte[] rawBytes;
-    private long maxHeaderSize;
-    private long maxBodySize;
-    private int readPos;
-    private int headerEnd;
+    private final int maxHeaderBytes;
+    private final long maxBodyBytes;
 
-    public RequestParser(long maxHeaderSize, long maxBodySize) {
-        this.maxBodySize = maxBodySize;
-        this.maxHeaderSize = maxHeaderSize;
+    private HttpRequest req = null;
+    private ParseState state = ParseState.HEADERS;
+    private long contentLength = 0;
+
+    // chunked-specific
+    private boolean chunked = false;
+    private int currentChunkSize = -1;
+    private long totalBodyRead = 0;
+    private ByteArrayOutputStream chunkOut = null;
+
+    public RequestParser(int maxHeaderBytes, long maxBodyBytes) {
+        this.maxHeaderBytes = maxHeaderBytes;
+        this.maxBodyBytes = maxBodyBytes;
     }
 
-    public HttpRequest getRequest() {
-        return request;
+    public ParseResult feed(ByteBuffer in) {
+        in.flip();
+        ParseResult result;
+        try {
+            result = parse(in);
+        } catch (Exception e) {
+            result = ParseResult.BAD_REQUEST;
+        } finally {
+            in.compact();
+        }
+        return result;
     }
 
-    public boolean feed(byte[] data, int length) {
-        if (readPos + length > rawBytes.length) {
-            rawBytes = Arrays.copyOf(rawBytes, rawBytes.length * 2 + length);
-        }
+    private ParseResult parse(ByteBuffer in) {
+        while (true) {
+            switch (state) {
+                case HEADERS: {
+                    ParseResult r = parseHeaders(in);
+                    if (r != ParseResult.COMPLETE) {
+                        return r;
+                    }
+                    String te = req.headers.getOrDefault("transfer-encoding", "").toLowerCase();
+                    chunked = te.contains("chunked");
 
-        System.arraycopy(data, 0, rawBytes, readPos, length);
-        readPos += length;
+                    if (chunked) {
+                        chunkOut = new ByteArrayOutputStream();
+                        totalBodyRead = 0;
+                        currentChunkSize = -1;
+                        state = ParseState.CHUNK_SIZE;
+                        continue;
+                    }
 
-        if (!request.isHeadersComplete() && readPos + length > maxHeaderSize) {
-            request.setState(ParseState.ERROR);
-            return false;
-        }
+                    // Fixed-length body
+                    String clStr = req.headers.getOrDefault("content-length", "0");
+                    try {
+                        contentLength = Long.parseLong(clStr.trim());
+                    } catch (NumberFormatException e) {
+                        return ParseResult.BAD_REQUEST;
+                    }
+                    if (contentLength < 0)
+                        return ParseResult.BAD_REQUEST;
+                    if (contentLength > maxBodyBytes)
+                        return ParseResult.BODY_TOO_LARGE;
 
-        if (request.getState() == ParseState.REQUEST_LINE ||
-                request.getState() == ParseState.HEADERS) {
-            parseHeaderSection();
-        }
+                    if (contentLength == 0) {
+                        req.setBody(new byte[0]);
+                        return ParseResult.COMPLETE;
+                    }
 
-        if (request.isHeadersComplete()) {
-            if (request.isChunked()) {
-                parseChunkedBody();
-            } else {
-                parseBody();
+                    state = ParseState.FIXED_BODY;
+                    continue;
+                }
+                case FIXED_BODY: {
+                    if (in.remaining() < contentLength)
+                        return ParseResult.NEED_MORE;
+
+                    byte[] body = new byte[(int) contentLength];
+                    in.get(body);
+                    req.setBody(body);
+
+                    return ParseResult.COMPLETE;
+                }
+
+                // case CHUNK_SIZE: {
+
+                // }
             }
         }
-
-        return request.isComplete();
     }
 
-    private void parseHeaderSection() {
-        String content = new String(rawBytes, 0, readPos);
-        int end = content.indexOf("\r\n\r\n");
-        if (end < 0)
-            return;
+    private ParseResult parseHeaders(ByteBuffer in) {
+        int end = findDoubleCRLF(in);
 
-        headerEnd = end + 4;
-        String headerContent = content.substring(0, end);
-        String[] lines = headerContent.split("\r\n");
-
-        String[] parts = lines[0].split(" ", 3);
-        if (parts.length != 3) {
-            request.setState(ParseState.ERROR);
-            return;
+        if (end == -1) {
+            if (in.remaining() > maxHeaderBytes)
+                return ParseResult.BODY_TOO_LARGE;
+            return ParseResult.NEED_MORE;
         }
 
-        request.setMethod(parts[0]);
-        request.setUri(parts[1]);
-        request.setHttpVersion(parts[2]);
-        request.setState(ParseState.HEADERS);
+        int start = in.position();
+        int headerLen = end - start;
+        if (headerLen > maxHeaderBytes)
+            return ParseResult.BODY_TOO_LARGE;
 
-        for (int i = 1; i < lines.length; i++) {
-            int colonIdx = lines[i].indexOf(':');
-            if (colonIdx > 0) {
-                String name = lines[i].substring(0, colonIdx).trim();
-                String value = lines[i].substring(colonIdx + 1).trim();
-                request.addHeader(name, value);
+        byte[] headerBytes = new byte[headerLen];
+        in.get(headerBytes);
+
+        try {
+            req = HttpRequest.fromHeaderRaw(headerBytes);
+        } catch (IllegalArgumentException e) {
+            return ParseResult.BAD_REQUEST;
+        }
+
+        return ParseResult.COMPLETE;
+    }
+
+    private int findDoubleCRLF(ByteBuffer in) {
+        int pos = in.position();
+        int lim = in.limit();
+        for (int i = pos; i + 3 < lim; i++) {
+            if (in.get(i) == '\r' && in.get(i + 1) == '\n' &&
+                    in.get(i + 2) == '\r' && in.get(i + 3) == '\n') {
+                return i + 4;
             }
         }
-
-        request.setHeadersComplete(true);
-
-        if (!request.isChunked() && request.getContentLength() <= 0) {
-            request.setState(ParseState.COMPLETE);
-        }
-    }
-
-    private void parseBody() {
-        int contentLength = request.getContentLength();
-        if (contentLength <= 0) {
-            request.setState(ParseState.COMPLETE);
-            return;
-        }
-
-        if (contentLength > maxBodySize) {
-            request.setState(ParseState.ERROR);
-            return;
-        }
-
-        int available = readPos - headerEnd;
-
-        if (available >= contentLength) {
-            byte[] body = new byte[contentLength];
-            System.arraycopy(rawBytes, headerEnd, body, 0, contentLength);
-            request.setBody(body);
-            request.setState(ParseState.COMPLETE);
-        }
-    }
-
-    private void parseChunkedBody() {
+        return -1;
     }
 }

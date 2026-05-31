@@ -1,10 +1,10 @@
 package requestParser;
 
 public enum ParseState {
-    REQUEST_LINE,
     HEADERS,
-    BODY,
-    CHUNKED_BODY,
-    COMPLETE,
-    ERROR
+    FIXED_BODY,
+    CHUNK_SIZE,
+    CHUNK_DATA,
+    CHUNK_CRLF,
+    TRAILERS
 }
