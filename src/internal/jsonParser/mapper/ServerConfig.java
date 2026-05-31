@@ -1,4 +1,4 @@
-package jsonParser.mapper;
+package internal.jsonParser.mapper;
 
 
 import java.util.ArrayList;

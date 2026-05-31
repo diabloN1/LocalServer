@@ -1,10 +1,10 @@
-package jsonParser;
+package internal.jsonParser;
 
 import java.util.*;
 
-import jsonParser.mapper.Mapper;
-import jsonParser.mapper.ServerConfig;
-import jsonParser.tokenizer.*;
+import internal.jsonParser.mapper.Mapper;
+import internal.jsonParser.mapper.ServerConfig;
+import internal.jsonParser.tokenizer.*;
 
 public class Parser {
 

@@ -1,4 +1,5 @@
-import jsonParser.mapper.ServerConfig;
+package internal;
+import internal.jsonParser.mapper.ServerConfig;
 
 public class Server {
     private final ServerConfig config;

@@ -1,4 +1,4 @@
-package requestParser;
+package internal.http.requestParser;
 
 public enum ParseState {
     HEADERS,

@@ -1,3 +1,5 @@
+package internal.http;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -5,9 +7,9 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
-import jsonParser.mapper.ServerConfig;
+import internal.jsonParser.mapper.ServerConfig;
 
-public class ErrorHandler {
+public class ErrorBuilder {
   private ServerConfig.VirtualServer virtualServer;
 
   private static final Map<Integer, String[]> DEFAULT_ERRORS = new HashMap<>();
@@ -25,7 +27,7 @@ public class ErrorHandler {
         new String[] { "500 Internal Server Error", "The server ecountred an unexpected error." });
   }
 
-  public ErrorHandler(ServerConfig.VirtualServer virtualServer) {
+  public ErrorBuilder(ServerConfig.VirtualServer virtualServer) {
     this.virtualServer = virtualServer;
   }
 

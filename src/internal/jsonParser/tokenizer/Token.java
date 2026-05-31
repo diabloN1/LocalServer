@@ -1,4 +1,4 @@
-package jsonParser.tokenizer;
+package internal.jsonParser.tokenizer;
 
 public class Token {
     public TokenType type;

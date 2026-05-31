@@ -1,4 +1,4 @@
-package requestParser;
+package internal.http.requestParser;
 
 public enum ParseResult {
     NEED_MORE,

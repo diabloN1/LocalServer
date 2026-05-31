@@ -1,4 +1,4 @@
-package requestParser;
+package internal.http.requestParser;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;

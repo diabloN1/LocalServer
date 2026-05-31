@@ -1,4 +1,4 @@
-package requestParser;
+package internal.http.requestParser;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;

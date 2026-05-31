@@ -2,8 +2,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-import jsonParser.Parser;
-import jsonParser.mapper.ServerConfig;
+import internal.Server;
+import internal.jsonParser.Parser;
+import internal.jsonParser.mapper.ServerConfig;
 
 public class Main {
     public static void main(String[] args) {
