@@ -144,7 +144,63 @@ public class HttpRequest {
         return headersComplete;
     }
 
-    private void parseQueryParams() {
+    public void addHeader(String name, String value) {
+        String lower = name.trim().toLowerCase();
+        headers.put(lower, value.trim());
+        if (lower.equals("content-length")) {
+            try {
+                contentLength = Integer.parseInt(value.trim());
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        if (lower.equals("transfer-encoding") && value.trim().toLowerCase().contains("chunked")) {
+            chunked = true;
+        }
+        if (lower.equals("cookie")) {
+            parseCookies(value);
+        }
     }
 
+    private void parseCookies(String cookieHeader) {
+        for (String part : cookieHeader.split(";")) {
+            int eq = part.indexOf('=');
+            if (eq >= 0) {
+                cookies.put(part.substring(0, eq).trim(), part.substring(eq + 1).trim());
+            }
+        }
+    }
+
+    private void parseQueryParams() {
+        if (queryString == null || queryString.isEmpty())
+            return;
+        for (String pair : queryString.split("&")) {
+            int eq = pair.indexOf('=');
+            if (eq >= 0) {
+                queryParams.put(urlDecode(pair.substring(0, eq)), urlDecode(pair.substring(eq + 1)));
+            } else {
+                queryParams.put(urlDecode(pair), "");
+            }
+        }
+    }
+
+    public static String urlDecode(String s) {
+        try {
+            return java.net.URLDecoder.decode(s, "UTF-8");
+        } catch (Exception e) {
+            return s;
+        }
+    }
+
+    public boolean isComplete() {
+        return state == ParseState.COMPLETE;
+    }
+
+    public boolean hasError() {
+        return state == ParseState.ERROR;
+    }
+
+    @Override
+    public String toString() {
+        return method + " " + uri + " " + httpVersion;
+    }
 }
