@@ -13,7 +13,7 @@ public class Router {
     }
 
     public HttpResponse handle(HttpRequest request, ServerConfig.VirtualServer vs) {
-        
+
         String path = request.getPath();
         ErrorBuilder errorBuilder = new ErrorBuilder(vs);
 
@@ -23,6 +23,20 @@ public class Router {
 
         ServerConfig.Route route = config.findRoute(vs, path);
 
+        if (route == null) {
+            return errorBuilder.buildError(404);
+        }
+
+        if (route.redirect != null && !route.redirect.isEmpty()) {
+            return HttpResponse.redirect(route.redirect, route.redirectCode);
+        }
+
+        if (!route.methods.isEmpty() && !route.methods.contains(request.getMethod())) {
+            HttpResponse r = errorBuilder.buildError(405);
+            r.setHeader("Allow", String.join(", ", route.methods));
+            return r;
+        }
+        
         return dispatch();
     }
 
