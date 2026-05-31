@@ -65,4 +65,73 @@ public class HttpResponse {
     public HttpResponse setHtmlBody(String body) {
         return setBody(body, "text/html; charset=utf-8");
     }
+
+    public HttpResponse addCookie(String name, String value, String path, String maxAge) {
+        String cookie = name + "=" + value + "; Path=" + path + "; Max-Age=" + maxAge + "; HttpOnly";
+        headers.put("Set-Cookie", cookie);
+        return this;
+    }
+
+    public int getStatusCode() {
+        return statusCode;
+    }
+
+    public byte[] toBytes() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("HTTP/1.1 ").append(statusCode).append(" ").append(statusMessage).append("\r\n");
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            sb.append(entry.getKey()).append(": ").append(entry.getValue()).append("\r\n");
+        }
+        sb.append("\r\n");
+
+        byte[] headerBytes = sb.toString().getBytes(StandardCharsets.UTF_8);
+        byte[] result = new byte[headerBytes.length + body.length];
+        System.arraycopy(headerBytes, 0, result, 0, headerBytes.length);
+        System.arraycopy(body, 0, result, headerBytes.length, body.length);
+        return result;
+    }
+
+    public static HttpResponse ok() {
+        return new HttpResponse((200));
+    }
+
+    public static HttpResponse created() {
+        return new HttpResponse((201));
+    }
+
+    public static HttpResponse noContent() {
+        return new HttpResponse((204));
+    }
+
+    public static HttpResponse badRequest() {
+        return new HttpResponse((400));
+    }
+
+    public static HttpResponse forbidden() {
+        return new HttpResponse((403));
+    }
+
+    public static HttpResponse notFound() {
+        return new HttpResponse((404));
+    }
+
+    public static HttpResponse methodNotAllowed() {
+        return new HttpResponse((405));
+    }
+
+    public static HttpResponse tooLarge() {
+        return new HttpResponse((413));
+    }
+
+    public static HttpResponse internalServerError() {
+        return new HttpResponse((500));
+    }
+
+
+    public static HttpResponse redirect(String location, int code) {
+        HttpResponse res = new HttpResponse(code);
+        res.setHeader("Location", location);
+        res.setBody("", "text/html");
+        return res;
+    }
 }
