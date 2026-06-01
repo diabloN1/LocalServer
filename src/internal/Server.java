@@ -12,6 +12,8 @@ import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Set;
 
+import internal.http.ErrorBuilder;
+import internal.http.HttpResponse;
 import internal.http.requestParser.HttpRequest;
 import internal.http.requestParser.ParseResult;
 import internal.http.requestParser.RequestParser;
@@ -148,7 +150,44 @@ public class Server {
     }
 
     private void processRequest(SelectionKey key, ClientContext ctx) {
+
+        // Find the appropriate virtual server
         HttpRequest request = ctx.parser.takeRequest();
+
+        // Get requested virtual server
+        String hostHeader = request.getHeader("host");
+        String host = hostHeader != null ? hostHeader.split(":")[0] : null;
+        ServerConfig.VirtualServer vs = config.findServer(host, ctx.port);
+
+        HttpResponse response;
+
+        if (vs == null) {
+            response = new ErrorBuilder(null).buildError(500);
+        } else {
+            try {
+                response = router.handle(request, vs);
+            } catch (Exception e) {
+                System.err.println("[Server] Router error: " + e.getMessage());
+                response = new ErrorBuilder(vs).buildError(500);
+            }
+        }
+
+        String connHeader = request.getHeader("connection");
+        boolean keepAlive = !"close".equalsIgnoreCase(connHeader) &&
+                "HTTP/1.1".equalsIgnoreCase(request.getHttpVersion());
+
+        if (keepAlive) {
+            response.setHeader("Connection", "keep-alive");
+            response.setHeader("Keep-Alive", "timeout=30, max=100");
+        } else {
+            response.setHeader("Connection", "close");
+        }
+
+        System.out.printf("[%s] %s %s -> %d%n",
+                new java.util.Date(), request.getMethod(),
+                request.getUri(), response.getStatusCode());
+
+        // sendResonse();
     }
 
     private void closeKey(SelectionKey key) {

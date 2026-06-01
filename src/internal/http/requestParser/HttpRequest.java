@@ -96,6 +96,10 @@ public class HttpRequest {
         }
     }
 
+    public String getHeader(String name) {
+        return headers.get(name.toLowerCase());
+    }
+
     // ---- Setters ----
 
     private void setUri(String raw) {
