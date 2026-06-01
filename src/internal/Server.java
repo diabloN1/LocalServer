@@ -72,11 +72,14 @@ public class Server {
                     try {
                         if (key.isAcceptable()) {
                             handleAccept(key);
+                        } else if (key.isReadable()) {
+                            // handleRead(key);
                         }
                     } catch (CancelledKeyException e) {
-
+                        closeKey(key);
                     } catch (Exception e) {
-
+                        System.err.println("[Server] Error on key: " + e.getMessage());
+                        closeKey(key);
                     }
                 }
             }
@@ -120,6 +123,14 @@ public class Server {
         ssc.bind(new InetSocketAddress(host, port));
         ssc.register(selector, SelectionKey.OP_ACCEPT, port);
         System.out.println("[Server] Listening on http://" + host + ":" + port + "/");
+    }
+
+    private void closeKey(SelectionKey key) {
+        try {
+            key.cancel();
+            key.channel().close();
+        } catch (IOException ignored) {
+        }
     }
 
     public void installShutdownHook() {
