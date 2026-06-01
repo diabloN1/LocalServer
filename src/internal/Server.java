@@ -12,6 +12,7 @@ import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Set;
 
+import internal.http.requestParser.ParseResult;
 import internal.http.requestParser.RequestParser;
 import internal.jsonParser.mapper.ServerConfig;
 
@@ -87,6 +88,15 @@ public class Server {
 
     }
 
+    private void openServerSocket(String host, int port) throws IOException {
+        ServerSocketChannel ssc = ServerSocketChannel.open();
+        ssc.configureBlocking(false);
+        ssc.setOption(StandardSocketOptions.SO_REUSEADDR, true);
+        ssc.bind(new InetSocketAddress(host, port));
+        ssc.register(selector, SelectionKey.OP_ACCEPT, port);
+        System.out.println("[Server] Listening on http://" + host + ":" + port + "/");
+    }
+
     private void handleAccept(SelectionKey key) throws IOException {
         ServerSocketChannel ssc = (ServerSocketChannel) key.channel();
         SocketChannel clientChannel = ssc.accept();
@@ -116,13 +126,23 @@ public class Server {
                 clientChannel.getRemoteAddress() + " on port " + port);
     }
 
-    private void openServerSocket(String host, int port) throws IOException {
-        ServerSocketChannel ssc = ServerSocketChannel.open();
-        ssc.configureBlocking(false);
-        ssc.setOption(StandardSocketOptions.SO_REUSEADDR, true);
-        ssc.bind(new InetSocketAddress(host, port));
-        ssc.register(selector, SelectionKey.OP_ACCEPT, port);
-        System.out.println("[Server] Listening on http://" + host + ":" + port + "/");
+    private void handleRead(SelectionKey key) throws IOException {
+        ClientContext ctx = (ClientContext) key.attachment();
+        int bytesRead = ctx.channel.read(ctx.in);
+
+        if (bytesRead < 0) {
+            closeKey(key);
+            return;
+        }
+        if (bytesRead == 0)
+            return;
+
+        ParseResult result = ctx.parser.feed(ctx.in);
+        switch (result) {
+            case COMPLETE:
+
+        }
+
     }
 
     private void closeKey(SelectionKey key) {
