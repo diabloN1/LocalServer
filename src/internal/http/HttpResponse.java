@@ -1,17 +1,23 @@
 package internal.http;
+
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
+import utils.Cookie;
 
 public class HttpResponse {
     private int statusCode = 200;
     private String statusMessage = "OK";
     private Map<String, String> headers = new LinkedHashMap<>();
+    private List<String> setCookies = new ArrayList<>();
     private byte[] body = new byte[0];
 
     private static final Map<Integer, String> STATUS_MESSAGES = new HashMap<>();
@@ -67,9 +73,8 @@ public class HttpResponse {
         return setBody(body, "text/html; charset=utf-8");
     }
 
-    public HttpResponse addCookie(String name, String value, String path, String maxAge) {
-        String cookie = name + "=" + value + "; Path=" + path + "; Max-Age=" + maxAge + "; HttpOnly";
-        headers.put("Set-Cookie", cookie);
+    public HttpResponse addCookie(Cookie cookie) {
+        setCookies.add(cookie.toHeaderValue());
         return this;
     }
 
@@ -83,6 +88,11 @@ public class HttpResponse {
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             sb.append(entry.getKey()).append(": ").append(entry.getValue()).append("\r\n");
         }
+
+        for (String c : setCookies) {
+            sb.append("Set-Cookie: ").append(c).append("\r\n");
+        }
+
         sb.append("\r\n");
 
         byte[] headerBytes = sb.toString().getBytes(StandardCharsets.UTF_8);
@@ -127,7 +137,6 @@ public class HttpResponse {
     public static HttpResponse internalServerError() {
         return new HttpResponse((500));
     }
-
 
     public static HttpResponse redirect(String location, int code) {
         HttpResponse res = new HttpResponse(code);
