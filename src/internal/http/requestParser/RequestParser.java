@@ -5,12 +5,16 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 public class RequestParser {
-    private final int maxHeaderBytes;
+    private final long maxHeaderBytes;
     private final long maxBodyBytes;
 
     private HttpRequest req = null;
     private ParseState state = ParseState.HEADERS;
     private long contentLength = 0;
+
+    // fixed-body
+    private ByteArrayOutputStream bodyOut = null;
+    private long bodyBytesRead = 0;
 
     // chunked-specific
     private boolean chunked = false;
@@ -18,7 +22,7 @@ public class RequestParser {
     private long totalBodyRead = 0;
     private ByteArrayOutputStream chunkOut = null;
 
-    public RequestParser(int maxHeaderBytes, long maxBodyBytes) {
+    public RequestParser(long maxHeaderBytes, long maxBodyBytes) {
         this.maxHeaderBytes = maxHeaderBytes;
         this.maxBodyBytes = maxBodyBytes;
     }
@@ -72,18 +76,36 @@ public class RequestParser {
                         return ParseResult.COMPLETE;
                     }
 
+                    bodyOut = new ByteArrayOutputStream((int) Math.min(contentLength, 8192));
+                    bodyBytesRead = 0;
+
                     state = ParseState.FIXED_BODY;
                     continue;
                 }
                 case FIXED_BODY: {
-                    if (in.remaining() < contentLength)
-                        return ParseResult.NEED_MORE;
+                    long remainingBody = contentLength - bodyBytesRead;
 
-                    byte[] body = new byte[(int) contentLength];
-                    in.get(body);
-                    req.setBody(body);
+                    if (remainingBody == 0) {
+                        req.setBody(bodyOut.toByteArray());
+                        return ParseResult.COMPLETE;
+                    }
 
-                    return ParseResult.COMPLETE;
+                    int toRead = (int) Math.min(in.remaining(), remainingBody);
+
+                    if (toRead > 0) {
+                        byte[] buf = new byte[toRead];
+                        in.get(buf);
+
+                        bodyOut.write(buf, 0, buf.length);
+                        bodyBytesRead += toRead;
+                    }
+
+                    if (bodyBytesRead == contentLength) {
+                        req.setBody(bodyOut.toByteArray());
+                        return ParseResult.COMPLETE;
+                    }
+
+                    return ParseResult.NEED_MORE;
                 }
 
                 case CHUNK_SIZE: {
@@ -242,6 +264,8 @@ public class RequestParser {
         currentChunkSize = -1;
         totalBodyRead = 0;
         chunkOut = null;
+        bodyOut = null;
+        bodyBytesRead = 0;
     }
 
 }

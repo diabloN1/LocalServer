@@ -1,6 +1,21 @@
 
 ### Todo
-- Server key -> HandleAccept()
-- Understand how non blocking work
 - server touch() and checkTimeouts() and purgeSessions()
-- Fix RequestParsing (body buffer limit (found in img))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### Done
+[X] - Server key -> HandleAccept()
+[X]- Understand how non blocking work
+[X]- Fix RequestParsing (body buffer limit (found in img))

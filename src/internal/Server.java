@@ -32,10 +32,10 @@ public class Server {
         ByteBuffer writeBuffer;
         int port;
 
-        ClientContext(SocketChannel ch, long maxBodySize, int port) {
+        ClientContext(SocketChannel ch, long maxHeaderSize, long maxBodySize, int port) {
             this.channel = ch;
             this.in = ByteBuffer.allocate(BUFFER_SIZE);
-            this.parser = new RequestParser(8192, maxBodySize);
+            this.parser = new RequestParser(maxHeaderSize, maxBodySize);
             this.port = port;
         }
     }
@@ -118,6 +118,7 @@ public class Server {
 
         ClientContext ctx = new ClientContext(
                 clientChannel,
+                vs.clientMaxHeaderSize,
                 vs.clientMaxBodySize,
                 port);
 
@@ -125,10 +126,6 @@ public class Server {
 
         System.out.println("[Server] Accepted connection from " +
                 clientChannel.getRemoteAddress() + " on port " + port);
-    }
-
-    private void processRequest(SelectionKey key, ClientContext ctx) {
-        HttpRequest request = ctx.parser.takeRequest();
     }
 
     private void handleRead(SelectionKey key) throws IOException {
@@ -148,6 +145,10 @@ public class Server {
 
         }
 
+    }
+
+    private void processRequest(SelectionKey key, ClientContext ctx) {
+        HttpRequest request = ctx.parser.takeRequest();
     }
 
     private void closeKey(SelectionKey key) {
