@@ -228,4 +228,20 @@ public class RequestParser {
         return null;
     }
 
+    public HttpRequest takeRequest() {
+        HttpRequest out = req;
+        reset();
+        return out;
+    }
+
+    private void reset() {
+        state = ParseState.HEADERS;
+        req = null;
+        contentLength = 0;
+        chunked = false;
+        currentChunkSize = -1;
+        totalBodyRead = 0;
+        chunkOut = null;
+    }
+
 }

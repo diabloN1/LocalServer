@@ -12,6 +12,7 @@ import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Set;
 
+import internal.http.requestParser.HttpRequest;
 import internal.http.requestParser.ParseResult;
 import internal.http.requestParser.RequestParser;
 import internal.jsonParser.mapper.ServerConfig;
@@ -124,6 +125,10 @@ public class Server {
 
         System.out.println("[Server] Accepted connection from " +
                 clientChannel.getRemoteAddress() + " on port " + port);
+    }
+
+    private void processRequest(SelectionKey key, ClientContext ctx) {
+        HttpRequest request = ctx.parser.takeRequest();
     }
 
     private void handleRead(SelectionKey key) throws IOException {
