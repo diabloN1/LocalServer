@@ -3,6 +3,7 @@ package internal;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.StandardSocketOptions;
+import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -11,13 +12,31 @@ import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Set;
 
+import internal.http.requestParser.RequestParser;
 import internal.jsonParser.mapper.ServerConfig;
 
 public class Server {
+    private static final int BUFFER_SIZE = 64 * 1024;
+
     private final ServerConfig config;
     private final Router router;
     private Selector selector;
     private volatile boolean running = true;
+
+    private static class ClientContext {
+        SocketChannel channel;
+        RequestParser parser;
+        ByteBuffer in;
+        ByteBuffer writeBuffer;
+        int port;
+
+        ClientContext(SocketChannel ch, long maxBodySize, int port) {
+            this.channel = ch;
+            this.in = ByteBuffer.allocate(BUFFER_SIZE);
+            this.parser = new RequestParser(8192, maxBodySize);
+            this.port = port;
+        }
+    }
 
     public Server(ServerConfig config) {
         this.config = config;
@@ -52,7 +71,7 @@ public class Server {
 
                     try {
                         if (key.isAcceptable()) {
-                            // handleAccept(key);
+                            handleAccept(key);
                         }
                     } catch (CancelledKeyException e) {
 
@@ -75,7 +94,23 @@ public class Server {
         clientChannel.setOption(StandardSocketOptions.TCP_NODELAY, true);
 
         int port = (int) key.attachment();
-        // ServerConfig.VirtualServer vs = 
+        ServerConfig.VirtualServer vs = config.findServer(null, port);
+
+        if (vs == null) {
+            throw new IllegalStateException("No virtual server found");
+        }
+
+        clientChannel.register(selector, SelectionKey.OP_READ, port);
+
+        ClientContext ctx = new ClientContext(
+                clientChannel,
+                vs.clientMaxBodySize,
+                port);
+
+        clientChannel.register(selector, SelectionKey.OP_READ, ctx);
+
+        System.out.println("[Server] Accepted connection from " +
+                clientChannel.getRemoteAddress() + " on port " + port);
     }
 
     private void openServerSocket(String host, int port) throws IOException {

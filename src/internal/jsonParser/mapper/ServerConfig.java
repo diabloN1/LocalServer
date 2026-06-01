@@ -39,6 +39,8 @@ public class ServerConfig {
         }
     }
 
+    public List<VirtualServer> servers = new ArrayList<>();
+
     public Route findRoute(VirtualServer vs, String path) {
         Route bestMatch = null;
         int bestLen = -1;
@@ -54,5 +56,16 @@ public class ServerConfig {
         return bestMatch;
     }
 
-    public List<VirtualServer> servers = new ArrayList<>();
+    public VirtualServer findServer(String host, int port) {
+        VirtualServer defaultServer = null;
+        for (VirtualServer vs : servers) {
+            if (vs.ports.contains(port)) {
+                if (vs.isDefault) defaultServer = vs;
+                if (host != null && host.startsWith(vs.host)) return vs;
+            }
+        }
+
+        return defaultServer != null ? defaultServer : (servers.isEmpty() ? null : servers.get(0));
+    }
+
 }
