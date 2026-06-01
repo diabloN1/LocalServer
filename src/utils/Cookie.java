@@ -13,6 +13,24 @@ public class Cookie {
         this.value = value;
     }
 
+    public String toHeaderValue() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(encode(name)).append("=").append(encode(value));
+        if (path != null)
+            sb.append("; Path=").append(path);
+        if (domain != null)
+            sb.append("; Domain=").append(domain);
+        if (maxAge >= 0)
+            sb.append("; Max-Age=").append(maxAge);
+        if (httpOnly)
+            sb.append("; HttpOnly");
+        if (secure)
+            sb.append("; Secure");
+        if (sameSite != null)
+            sb.append("; SameSite=").append(sameSite);
+        return sb.toString();
+    }
+
     public Cookie path(String p) {
         this.path = p;
         return this;
