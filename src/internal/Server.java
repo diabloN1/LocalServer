@@ -7,6 +7,7 @@ import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -36,32 +37,45 @@ public class Server {
 
         // Main event loop
         while (running) {
-                int readyCount = selector.select(1000); // 1s timeout for maintenance tasks
+            int readyCount = selector.select(1000); // max 1s tick
 
-                if (readyCount > 0) {
-                    Set<SelectionKey> selectedKeys = selector.selectedKeys();
-                    Iterator<SelectionKey> keyIterator = selectedKeys.iterator();
+            if (readyCount > 0) {
+                Set<SelectionKey> selectedKeys = selector.selectedKeys();
+                Iterator<SelectionKey> keyIterator = selectedKeys.iterator();
 
-                    while (keyIterator.hasNext()) {
-                        SelectionKey key = keyIterator.next();
-                        keyIterator.remove();
+                while (keyIterator.hasNext()) {
+                    SelectionKey key = keyIterator.next();
+                    keyIterator.remove();
 
-                        if (!key.isValid())
-                            continue;
+                    if (!key.isValid())
+                        continue;
 
-                        try {
-                            if (key.isAcceptable()) {
-                                // handleAccept(key);
-                            }
-                        } catch (CancelledKeyException e) {
-                            
-                        } catch (Exception e) {
-                            
+                    try {
+                        if (key.isAcceptable()) {
+                            // handleAccept(key);
                         }
+                    } catch (CancelledKeyException e) {
+
+                    } catch (Exception e) {
+
                     }
                 }
+            }
         }
 
+    }
+
+    private void handleAccept(SelectionKey key) throws IOException {
+        ServerSocketChannel ssc = (ServerSocketChannel) key.channel();
+        SocketChannel clientChannel = ssc.accept();
+        if (clientChannel == null)
+            return;
+
+        clientChannel.configureBlocking(false);
+        clientChannel.setOption(StandardSocketOptions.TCP_NODELAY, true);
+
+        int port = (int) key.attachment();
+        // ServerConfig.VirtualServer vs = 
     }
 
     private void openServerSocket(String host, int port) throws IOException {
