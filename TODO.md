@@ -1,4 +1,4 @@
 
 ### Todo
-- [ ] FileManager Class (serveFile() method)
+- Server key -> HandleAccept()
 - Fix RequestParsing (body buffer limit (found in img))
