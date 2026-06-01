@@ -3,6 +3,8 @@ package internal.http.requestParser;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+import utils.Cookie;
+
 public class HttpRequest {
 
     private String method;
@@ -13,7 +15,7 @@ public class HttpRequest {
 
     final Map<String, String> headers = new LinkedHashMap<>();
     final Map<String, String> queryParams = new LinkedHashMap<>();
-    final Map<String, String> cookies = new LinkedHashMap<>();
+    final Map<String, Cookie> cookies = new LinkedHashMap<>();
     final Map<String, String> trailers = new LinkedHashMap<>();
 
     private byte[] body = new byte[0];
@@ -125,13 +127,8 @@ public class HttpRequest {
         }
     }
 
-    private void parseCookies(String cookieHeader) {
-        for (String part : cookieHeader.split(";")) {
-            int eq = part.indexOf('=');
-            if (eq >= 0) {
-                cookies.put(part.substring(0, eq).trim(), part.substring(eq + 1).trim());
-            }
-        }
+    private void parseCookies(String header) {
+        cookies.putAll(Cookie.parseCookieHeader(header));
     }
 
     public static String urlDecode(String s) {
