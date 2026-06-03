@@ -28,14 +28,16 @@ public class GetHandler {
             Path rootPath = Paths.get(route.root).toRealPath();
             Path fullPath = rootPath.resolve(dynamicPath).normalize();
 
+            Path indexPath = fullPath.resolve(route.index).normalize();
+
             // Path traversal protection
-            if (!fullPath.startsWith(rootPath)) {
+            if (!indexPath.startsWith(rootPath)) {
                 return errorBuilder.buildError(403);
             }
 
             // serveFile
-            File file = fullPath.toFile();
-            
+            File file = indexPath.toFile();
+
             if (!file.exists()) {
                 return errorBuilder.buildError(404);
             }

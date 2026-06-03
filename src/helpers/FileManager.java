@@ -20,6 +20,7 @@ public class FileManager {
                     .setHeader("Cache-Control", "max-age=3600")
                     .setBody(content, mime);
         } catch (IOException e) {
+            System.out.println(file.toPath());
             return errorBuilder.buildError(500);
         }
     }
