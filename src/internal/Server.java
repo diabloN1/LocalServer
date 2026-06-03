@@ -59,7 +59,6 @@ public class Server {
         System.out.println("[Server] Event loop started. Press Ctrl+C to stop.");
         installShutdownHook();
 
-        // Main event loop
         while (running) {
             int readyCount = selector.select(1000); // max 1s tick
 
@@ -80,7 +79,7 @@ public class Server {
                         } else if (key.isReadable()) {
                             handleRead(key);
                         } else if (key.isWritable()) {
-                            
+                            handleWrite(key);
                         }
                     } catch (CancelledKeyException e) {
                         closeKey(key);
@@ -92,6 +91,8 @@ public class Server {
             }
         }
 
+        System.out.println("[Server] Shutting down...");
+        selector.close();
     }
 
     private void openServerSocket(String host, int port) throws IOException {
@@ -216,6 +217,22 @@ public class Server {
         ctx.closeAfterWrite = closeAfter;
 
         key.interestOps(SelectionKey.OP_WRITE);
+    }
+
+    private void handleWrite(SelectionKey key) throws IOException {
+        ClientContext ctx = (ClientContext) key.attachment();
+        SocketChannel channel = ctx.channel;
+
+        channel.write(ctx.writeBuffer);
+
+        if (!ctx.writeBuffer.hasRemaining()) {
+            if (ctx.closeAfterWrite) {
+                closeKey(key);
+            } else {
+                ctx.writeBuffer = null;
+                key.interestOps(SelectionKey.OP_READ);
+            }
+        }
     }
 
     private void closeKey(SelectionKey key) {

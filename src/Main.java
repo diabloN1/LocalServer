@@ -19,7 +19,9 @@ public class Main {
             new Server(config).start();
         } catch (IOException err) {
             System.err.println(configPath + " file do not have correct format!");
+        } catch (Exception e) {
+            System.err.println("[Main] Fatal: Server failed to start: " + e.getMessage());
+            e.printStackTrace();
         }
-
     }
 }

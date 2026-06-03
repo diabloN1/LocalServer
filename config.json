@@ -2,7 +2,7 @@
   "servers": [
     {
       "host": "127.0.0.1",
-      "ports": [8080],
+      "ports": [8080, 8081],
       "default": true,
       "client_max_header_size": 16384,
       "client_max_body_size": 10485760,
