@@ -15,16 +15,16 @@ public class ErrorBuilder {
   private static final Map<Integer, String[]> DEFAULT_ERRORS = new HashMap<>();
 
   static {
-    DEFAULT_ERRORS.put(400, new String[] { "400 Bad Request", "The server could not understand the request" });
-    DEFAULT_ERRORS.put(403, new String[] { "403 Frobidden", "Access to this resource is denied" });
-    DEFAULT_ERRORS.put(404, new String[] { "404 Not Found", "The request resource could not be found" });
+    DEFAULT_ERRORS.put(400, new String[] { "Bad Request", "The server could not understand the request" });
+    DEFAULT_ERRORS.put(403, new String[] { "Frobidden", "Access to this resource is denied" });
+    DEFAULT_ERRORS.put(404, new String[] { "Not Found", "The request resource could not be found" });
     DEFAULT_ERRORS.put(405,
-        new String[] { "405 Methode Not Allowed", "The HTTP Methode used is not allowed for this resource" });
-    DEFAULT_ERRORS.put(408, new String[] { "408 Request Timout", "The server timed out waiting for the request" });
+        new String[] { "Methode Not Allowed", "The HTTP Methode used is not allowed for this resource" });
+    DEFAULT_ERRORS.put(408, new String[] { "Request Timout", "The server timed out waiting for the request" });
     DEFAULT_ERRORS.put(413,
-        new String[] { "413 Content Too large", "The request body exeeds the maximim allowed size" });
+        new String[] { "Content Too large", "The request body exeeds the maximim allowed size" });
     DEFAULT_ERRORS.put(500,
-        new String[] { "500 Internal Server Error", "The server ecountred an unexpected error." });
+        new String[] { "Internal Server Error", "The server ecountred an unexpected error." });
   }
 
   public ErrorBuilder(ServerConfig.VirtualServer virtualServer) {
@@ -44,29 +44,14 @@ public class ErrorBuilder {
 
       }
     }
-    String[] info = DEFAULT_ERRORS.getOrDefault(code, new String[] { code + " Error", "An error occurred." });
-    String html = buildDefaultErrorPage(info[0], info[1]);
+    String[] info = DEFAULT_ERRORS.getOrDefault(code, new String[] { "Error", "An error occurred." });
+    String html = buildDefaultErrorPage(code, info[0], info[1]);
     return new HttpResponse(code).setHtmlBody(html);
   }
 
-  private String buildDefaultErrorPage(String title, String message) {
-    // Safely parss the status code and text to privent Exceptions if a title
-    // doesn't contain a space
-    String statusCode = "";
-    String statusText = title;
+  private String buildDefaultErrorPage(int code, String title, String message) {
 
-    if (title != null) {
-      int spaceIdx = title.indexOf(' ');
-      if (spaceIdx > 0) {
-        statusCode = title.substring(0, spaceIdx);
-        statusText = title.substring(spaceIdx + 1);
-      } else if (title.matches("^\\d+$")) {
-        statusCode = title;
-        statusText = "An Error Occurred";
-      }
-    }
-
-    String htmlTemplate = """
+  String htmlTemplate = """
         <!DOCTYPE html>
         <html lang="en">
         <head>
@@ -168,11 +153,11 @@ public class ErrorBuilder {
         </html>
         """;
 
-    return String.format(
-        htmlTemplate,
-        escapeHtml(title), // Page <title>
-        escapeHtml(statusCode), // Huge Number (e.g. 404)
-        escapeHtml(statusText), // Text below number (e.g. Not Found)
+  return String.format(htmlTemplate,
+
+  escapeHtml(title), // Page <title>
+        code, // Huge Number (e.g. 404)
+        escapeHtml(title), // Text below number (e.g. Not Found)
         escapeHtml(message) // Description message
     );
   }

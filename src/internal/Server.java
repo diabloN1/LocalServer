@@ -187,7 +187,11 @@ public class Server {
                 new java.util.Date(), request.getMethod(),
                 request.getUri(), response.getStatusCode());
 
-        // sendResonse();
+        sendResponse();
+    }
+
+    private void sendResponse() {
+        
     }
 
     private void closeKey(SelectionKey key) {
