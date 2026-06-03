@@ -33,6 +33,7 @@ public class Server {
         ByteBuffer in;
         ByteBuffer writeBuffer;
         int port;
+        boolean closeAfterWrite = false;
 
         ClientContext(SocketChannel ch, long maxHeaderSize, long maxBodySize, int port) {
             this.channel = ch;
@@ -77,7 +78,9 @@ public class Server {
                         if (key.isAcceptable()) {
                             handleAccept(key);
                         } else if (key.isReadable()) {
-                            // handleRead(key);
+                            handleRead(key);
+                        } else if (key.isWritable()) {
+                            
                         }
                     } catch (CancelledKeyException e) {
                         closeKey(key);
@@ -142,16 +145,30 @@ public class Server {
             return;
 
         ParseResult result = ctx.parser.feed(ctx.in);
+
+        ServerConfig.VirtualServer vs = config.findServer(null, ctx.port);
+        ErrorBuilder eh = new ErrorBuilder(vs);
         switch (result) {
             case COMPLETE:
+                processRequest(key, ctx);
+                break;
 
+            case BAD_REQUEST:
+                sendResponse(key, ctx, eh.buildError(400), true);
+                break;
+
+            case BODY_TOO_LARGE:
+                sendResponse(key, ctx, eh.buildError(413), true);
+                break;
+
+            case NEED_MORE:
+                break;
         }
 
     }
 
     private void processRequest(SelectionKey key, ClientContext ctx) {
 
-        // Find the appropriate virtual server
         HttpRequest request = ctx.parser.takeRequest();
 
         // Get requested virtual server
@@ -172,6 +189,7 @@ public class Server {
             }
         }
 
+        // Set Keep-alive
         String connHeader = request.getHeader("connection");
         boolean keepAlive = !"close".equalsIgnoreCase(connHeader) &&
                 "HTTP/1.1".equalsIgnoreCase(request.getHttpVersion());
@@ -187,11 +205,17 @@ public class Server {
                 new java.util.Date(), request.getMethod(),
                 request.getUri(), response.getStatusCode());
 
-        sendResponse();
+        sendResponse(key, ctx, response, !keepAlive);
     }
 
-    private void sendResponse() {
-        
+    private void sendResponse(SelectionKey key, ClientContext ctx, HttpResponse response,
+            boolean closeAfter) {
+
+        byte[] responseBytes = response.toBytes();
+        ctx.writeBuffer = ByteBuffer.wrap(responseBytes);
+        ctx.closeAfterWrite = closeAfter;
+
+        key.interestOps(SelectionKey.OP_WRITE);
     }
 
     private void closeKey(SelectionKey key) {
