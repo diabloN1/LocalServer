@@ -1,6 +1,5 @@
 package internal.jsonParser.mapper;
 
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -60,8 +59,10 @@ public class ServerConfig {
         VirtualServer defaultServer = null;
         for (VirtualServer vs : servers) {
             if (vs.ports.contains(port)) {
-                if (vs.isDefault) defaultServer = vs;
-                if (host != null && host.startsWith(vs.host)) return vs;
+                if (vs.isDefault)
+                    defaultServer = vs;
+                if (host != null && host.startsWith(vs.host))
+                    return vs;
             }
         }
 

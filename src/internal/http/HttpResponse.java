@@ -54,6 +54,12 @@ public class HttpResponse {
         return this;
     }
 
+    public HttpResponse setStatus(int code) {
+        this.statusCode = code;
+        this.statusMessage = STATUS_MESSAGES.getOrDefault(code, "Unknown");
+        return this;
+    }
+
     public HttpResponse setBody(byte[] body, String contentType) {
         this.body = body;
         setHeader("Content-Type", contentType);
