@@ -1,50 +1,403 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LocalServer</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #0f172a; color: #e2e8f0; min-height: 100vh;
-    }
-    header {
-      background: #1e293b; border-bottom: 1px solid #334155;
-      padding: 1rem 2rem; display: flex; align-items: center; gap: 1rem;
-    }
-    .logo { font-size: 1.4rem; font-weight: 700; color: #3b82f6; }
-    .badge { background: #1d4ed8; color: white; font-size: 0.7rem;
-             padding: 0.2rem 0.5rem; border-radius: 9999px; font-weight: 600; }
-    main { max-width: 900px; margin: 3rem auto; padding: 0 2rem; }
-    h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem; }
-    h1 span { color: #3b82f6; }
-    .subtitle { color: #94a3b8; font-size: 1.1rem; margin-bottom: 3rem; }
-    footer {
-      text-align: center; color: #475569; font-size: 0.8rem;
-      padding: 2rem; margin-top: 4rem; border-top: 1px solid #1e293b;
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <div class="logo">LocalServer</div>
-    <span class="badge">HTTP/1.1</span>
-    <span class="badge">NIO</span>
-    <span class="badge">Java</span>
-  </header>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LocalServer</title>
+    <style>
+      /* Scandinavian Design Variables */
+      :root {
+        --bg-color: #f4f5f7; /* Soft, cool off-white */
+        --surface-color: #ffffff; /* Pure white for cards */
+        --text-main: #2e3440; /* Soft charcoal instead of harsh black */
+        --text-muted: #6c7a89; /* Muted cool grey */
+        --border-color: #e2e8f0; /* Very subtle border */
+        --accent-color: #5e81ac; /* Nordic icy blue */
+        --accent-hover: #4c566a; /* Darker slate for hover */
+        --success-bg: #e8f5e9;
+        --success-text: #2e7d32;
+        --error-bg: #ffebee;
+        --error-text: #c62828;
+        --radius: 12px; /* Soft, friendly corners */
+        --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      }
 
-  <main>
-    <h1>Welcome to <span>LocalServer</span></h1>
-  </main>
+      /* Base Reset & Typography */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Helvetica, sans-serif;
+        background: var(--bg-color);
+        color: var(--text-main);
+        min-height: 100vh;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
 
-  <footer>LocalServer/1.0 &mdash; Java NIO HTTP/1.1 &mdash; Running on port
-    <span id="port"></span>
-  </footer>
+      /* Layout */
+      .container {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 0 2rem;
+      }
 
-  <script>
-    document.getElementById('port').textContent = window.location.port || '80';
-  </script>
-</body>
+      /* Header */
+      header {
+        padding: 3rem 0;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 3rem;
+      }
+      .logo {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-main);
+        letter-spacing: -0.5px;
+      }
+      .badges {
+        display: flex;
+        gap: 0.5rem;
+      }
+      .badge {
+        background: #edf2f7;
+        color: var(--accent-color);
+        font-size: 0.75rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+      }
+
+      /* Typography */
+      h1 {
+        font-size: 3rem;
+        font-weight: 800;
+        letter-spacing: -1px;
+        margin-bottom: 1rem;
+        color: var(--text-main);
+      }
+      h1 span {
+        color: var(--accent-color);
+      }
+      .subtitle {
+        color: var(--text-muted);
+        font-size: 1.15rem;
+        margin-bottom: 4rem;
+        max-width: 600px;
+      }
+      h2 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        color: var(--text-main);
+      }
+
+      /* Grid & Cards */
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 4rem;
+      }
+      .card {
+        background: var(--surface-color);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        padding: 2rem;
+        transition: var(--transition);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        display: flex;
+        flex-direction: column;
+      }
+      .card:hover {
+        border-color: var(--accent-color);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.04);
+      }
+      .card-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1.5rem;
+      }
+      .card h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+      }
+      .card p {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+        margin-bottom: 2rem;
+        flex-grow: 1;
+      }
+      .card a {
+        display: inline-flex;
+        justify-content: center;
+        background: var(--bg-color);
+        color: var(--text-main);
+        text-decoration: none;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: var(--transition);
+        border: 1px solid var(--border-color);
+      }
+      .card a:hover {
+        background: var(--accent-color);
+        color: white;
+        border-color: var(--accent-color);
+      }
+
+      /* Sections */
+      .section {
+        margin-bottom: 4rem;
+      }
+
+      /* Upload Area */
+      .upload-area {
+        background: var(--surface-color);
+        border: 2px dashed var(--border-color);
+        border-radius: var(--radius);
+        padding: 3rem 2rem;
+        text-align: center;
+        transition: var(--transition);
+      }
+      .upload-area:hover {
+        border-color: var(--accent-color);
+        background: #fafbfc;
+      }
+      input[type="file"] {
+        margin: 1.5rem 0;
+        color: var(--text-muted);
+        font-size: 0.95rem;
+      }
+      /* Styling the default file input button */
+      input[type="file"]::file-selector-button {
+        background: var(--bg-color);
+        color: var(--text-main);
+        border: 1px solid var(--border-color);
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        margin-right: 1rem;
+        cursor: pointer;
+        transition: var(--transition);
+        font-family: inherit;
+      }
+      input[type="file"]::file-selector-button:hover {
+        background: #e2e8f0;
+      }
+
+      button {
+        background: var(--accent-color);
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        cursor: pointer;
+        font-weight: 500;
+        transition: var(--transition);
+        font-family: inherit;
+      }
+      button:hover {
+        background: var(--accent-hover);
+        transform: translateY(-1px);
+      }
+
+      /* Status Messages */
+      .status {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        border-radius: 8px;
+        display: none;
+        font-size: 0.95rem;
+        font-weight: 500;
+      }
+      .status.success {
+        background: var(--success-bg);
+        color: var(--success-text);
+        display: block;
+      }
+      .status.error {
+        background: var(--error-bg);
+        color: var(--error-text);
+        display: block;
+      }
+
+      /* API Test Block */
+      .api-test-card {
+        background: var(--surface-color);
+        padding: 2rem;
+        border-radius: var(--radius);
+        border: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+      }
+      .api-test-card p {
+        color: var(--text-muted);
+      }
+      #postResult {
+        color: var(--accent-color);
+        font-family: monospace;
+        background: var(--bg-color);
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        display: empty;
+      }
+      #postResult:empty {
+        display: none;
+      }
+
+      /* Footer */
+      footer {
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        padding: 3rem 0;
+        margin-top: 2rem;
+        border-top: 1px solid var(--border-color);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div class="logo">LocalServer</div>
+        <div class="badges">
+          <span class="badge">HTTP/1.1</span>
+          <span class="badge">NIO</span>
+          <span class="badge">Java</span>
+        </div>
+      </header>
+
+      <main>
+        <h1>Welcome to <span>LocalServer</span></h1>
+        <p class="subtitle">
+          A custom HTTP/1.1 server built with Java NIO. Fast, non-blocking, and
+          designed with simplicity in mind.
+        </p>
+
+        <div class="grid">
+          <div class="card">
+            <div class="card-icon">📁</div>
+            <h3>Directory Listing</h3>
+            <p>
+              Browse files and directories served directly by the local server.
+            </p>
+            <a href="/upload/">Browse Uploads</a>
+          </div>
+          <div class="card">
+            <div class="card-icon">🐍</div>
+            <h3>CGI Scripts</h3>
+            <p>
+              Execute Python and Bash CGI scripts dynamically via the router.
+            </p>
+            <a href="/cgi-bin/hello.py">Run hello.py</a>
+          </div>
+          <div class="card">
+            <div class="card-icon">🔁</div>
+            <h3>Redirects</h3>
+            <p>
+              Test seamless HTTP 301 and 302 redirections configured internally.
+            </p>
+            <a href="/redirect">Test Redirect</a>
+          </div>
+          <div class="card">
+            <div class="card-icon">⚠️</div>
+            <h3>Error Pages</h3>
+            <p>
+              View custom tailored error pages for 400, 403, 404, 405, and 500.
+            </p>
+            <a href="/this-does-not-exist">Test 404</a>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>📤 File Upload</h2>
+          <div class="upload-area">
+            <p style="color: var(--text-muted); margin-bottom: 1rem">
+              Securely upload files via multipart/form-data to the local file
+              system.
+            </p>
+            <form
+              id="uploadForm"
+              action="/upload"
+              method="POST"
+              enctype="multipart/form-data"
+            >
+              <input type="file" name="file" id="fileInput" required />
+              <br />
+              <button type="submit">Upload File</button>
+            </form>
+            <div id="status" class="status"></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>🔌 API Connection Test</h2>
+          <div class="api-test-card">
+            <p>Send a JSON POST payload to verify request body parsing.</p>
+            <button onclick="testPost()">Send POST</button>
+            <span id="postResult"></span>
+          </div>
+        </div>
+      </main>
+
+      <footer>
+        LocalServer/1.0 &mdash; Java NIO HTTP/1.1 &mdash; Running on port
+        <span id="port"></span>
+      </footer>
+    </div>
+
+    <script>
+      document.getElementById("port").textContent =
+        window.location.port || "80";
+
+      document
+        .getElementById("uploadForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const status = document.getElementById("status");
+          const formData = new FormData(e.target);
+          try {
+            const res = await fetch("/upload", {
+              method: "POST",
+              body: formData,
+            });
+            const text = await res.text();
+            if (res.ok) {
+              status.className = "status success";
+              status.textContent = "✓ Upload successful!";
+            } else {
+              status.className = "status error";
+              status.textContent = "✗ Upload failed: " + res.status;
+            }
+          } catch (err) {
+            status.className = "status error";
+            status.textContent = "✗ Error: " + err.message;
+          }
+        });
+
+      async function testPost() {
+        const el = document.getElementById("postResult");
+        try {
+          const res = await fetch("/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ test: true, timestamp: Date.now() }),
+          });
+          el.textContent = "Response " + res.status + " " + res.statusText;
+        } catch (err) {
+          el.textContent = "Error: " + err.message;
+        }
+      }
+    </script>
+  </body>
 </html>
