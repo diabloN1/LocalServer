@@ -43,7 +43,26 @@ public class DirectoryListingBuilder {
                         a:hover { color: var(--accent); }
                         .icon { font-size: 1.2rem; }
                         .size, .date { color: var(--muted); font-size: 0.9rem; }
+                        .delete-btn { background: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 0.2rem 0.5rem; border-radius: 4px; cursor: pointer; font-family: inherit; font-size: 0.8rem; transition: all 0.15s; }
+                        .delete-btn:hover { background: #ef4444; color: white; }
                     </style>
+                    <script>
+                        function deleteFile(url) {
+                            if (confirm('Are you sure you want to delete this file?')) {
+                                fetch(url, { method: 'DELETE' })
+                                    .then(res => {
+                                        if (res.ok || res.status === 204) {
+                                            window.location.reload();
+                                        } else {
+                                            alert('Failed to delete file');
+                                        }
+                                    }).catch(err => {
+                                        console.error(err);
+                                        alert('Error deleting file');
+                                    });
+                            }
+                        }
+                    </script>
                 </head>
                 <body>
                     <div class="container">
@@ -51,9 +70,10 @@ public class DirectoryListingBuilder {
                         <table>
                             <thead>
                                 <tr>
-                                    <th style="width: 60%%">Name</th>
+                                    <th style="width: 50%%">Name</th>
                                     <th style="width: 20%%">Size</th>
                                     <th style="width: 20%%">Last Modified</th>
+                                    <th style="width: 10%%">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -68,6 +88,7 @@ public class DirectoryListingBuilder {
                         <td><a href="../"><span class="icon">📁</span> ..</a></td>
                         <td class="size">-</td>
                         <td class="date">-</td>
+                        <td></td>
                     </tr>
                     """);
         }
@@ -87,14 +108,16 @@ public class DirectoryListingBuilder {
                 String size = isDir ? "-" : formatSize(f.length());
                 String modified = formatFileDate(f.lastModified());
                 String icon = isDir ? "📁" : "📄";
+                String action = isDir ? "" : String.format("<button class=\"delete-btn\" onclick=\"deleteFile('%s')\">Delete</button>", href);
 
                 html.append(String.format("""
                         <tr>
                             <td><a href="%s"><span class="icon">%s</span> %s</a></td>
                             <td class="size">%s</td>
                             <td class="date">%s</td>
+                            <td>%s</td>
                         </tr>
-                        """, href, icon, escapeHtml(name), size, modified));
+                        """, href, icon, escapeHtml(name), size, modified, action));
             }
         }
 
