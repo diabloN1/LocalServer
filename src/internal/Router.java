@@ -1,6 +1,7 @@
 package internal;
 
 import handlers.GetHandler;
+import handlers.PostHandler;
 import internal.http.ErrorBuilder;
 import internal.http.HttpResponse;
 import internal.http.requestParser.HttpRequest;
@@ -42,13 +43,14 @@ public class Router {
     }
 
     private HttpResponse dispatch(HttpRequest request,
-                                  ServerConfig.Route route,
-                                  ServerConfig.VirtualServer vs,
-                                  ErrorBuilder errorBuilder) {
+            ServerConfig.Route route,
+            ServerConfig.VirtualServer vs,
+            ErrorBuilder errorBuilder) {
         return switch (request.getMethod()) {
 
-        case "GET"    -> new GetHandler().handle(request, route, vs, errorBuilder);
-        default -> errorBuilder.buildError(405);
+            case "GET" -> new GetHandler().handle(request, route, vs, errorBuilder);
+            case "POST" -> new PostHandler().handle(request, route, vs, errorBuilder);
+            default -> errorBuilder.buildError(405);
         };
     }
 }

@@ -1,4 +1,3 @@
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -17,11 +16,8 @@ public class Main {
             ServerConfig config = new Parser().parse(fileContent);
 
             new Server(config).start();
-        } catch (IOException err) {
-            System.err.println(configPath + " file do not have correct format!");
         } catch (Exception e) {
             System.err.println("[Main] Fatal: Server failed to start: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 }
