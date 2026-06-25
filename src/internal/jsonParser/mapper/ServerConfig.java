@@ -41,18 +41,12 @@ public class ServerConfig {
     public List<VirtualServer> servers = new ArrayList<>();
 
     public Route findRoute(VirtualServer vs, String path) {
-        Route bestMatch = null;
-        int bestLen = -1;
-
         for (Route route : vs.routes) {
             if (path.startsWith(route.path)) {
-                if (route.path.length() > bestLen) {
-                    bestLen = route.path.length();
-                    bestMatch = route;
-                }
+                return route;
             }
         }
-        return bestMatch;
+        return null;
     }
 
     public VirtualServer findServer(String host, int port) {
