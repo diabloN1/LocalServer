@@ -19,8 +19,7 @@
           "path": "/",
           "methods": ["GET", "POST", "DELETE"],
           "root": "./www",
-          "index": "index.html",
-          "directory_listing": true
+          "index": "index.html"
         },
         {
           "path": "/upload",

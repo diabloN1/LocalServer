@@ -77,7 +77,7 @@ public class JsonTokenizer {
 
     private Token readString() {
 
-        pos++; // skip "
+        pos++; // "
 
         StringBuilder sb = new StringBuilder();
 
@@ -88,7 +88,7 @@ public class JsonTokenizer {
             pos++;
         }
 
-        pos++; // closing "
+        pos++; // "
 
         return new Token(
                 TokenType.STRING,
