@@ -28,6 +28,7 @@ public class Server {
     private final Router router;
     private Selector selector;
     private volatile boolean running = true;
+    private long lastSessionPurge = System.currentTimeMillis();
 
     private static class ClientContext {
         SocketChannel channel;
@@ -100,6 +101,8 @@ public class Server {
                     }
                 }
             }
+
+            maybePurgeSessions();
         }
 
         System.out.println("[Server] Shutting down...");
@@ -155,6 +158,8 @@ public class Server {
         }
         if (bytesRead == 0)
             return;
+
+        ctx.touch();
 
         ParseResult result = ctx.parser.feed(ctx.in);
 
@@ -235,6 +240,7 @@ public class Server {
         SocketChannel channel = ctx.channel;
 
         channel.write(ctx.writeBuffer);
+        ctx.touch();
 
         if (!ctx.writeBuffer.hasRemaining()) {
             if (ctx.closeAfterWrite) {
@@ -243,6 +249,16 @@ public class Server {
                 ctx.writeBuffer = null;
                 key.interestOps(SelectionKey.OP_READ);
             }
+        }
+    }
+
+    private void maybePurgeSessions() {
+        long now = System.currentTimeMillis();
+        if (now - lastSessionPurge > SESSION_PURGE_INTERVAL_MS) {
+            int purged = utils.Session.purgeExpired();
+            if (purged > 0)
+                System.out.println("[Server] Purged " + purged + " expired sessions");
+            lastSessionPurge = now;
         }
     }
 
