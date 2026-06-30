@@ -21,6 +21,8 @@ import internal.jsonParser.mapper.ServerConfig;
 
 public class Server {
     private static final int BUFFER_SIZE = 64 * 1024;
+    private static final long REQUEST_TIMEOUT_MS = 30_000; // 30s
+    private static final long SESSION_PURGE_INTERVAL_MS = 5 * 60_000; // 5 min
 
     private final ServerConfig config;
     private final Router router;
@@ -33,6 +35,7 @@ public class Server {
         ByteBuffer in;
         ByteBuffer writeBuffer;
         int port;
+        long lastActivity = System.currentTimeMillis();
         boolean closeAfterWrite = false;
 
         ClientContext(SocketChannel ch, long maxHeaderSize, long maxBodySize, int port) {
@@ -40,6 +43,14 @@ public class Server {
             this.in = ByteBuffer.allocate(BUFFER_SIZE);
             this.parser = new RequestParser(maxHeaderSize, maxBodySize);
             this.port = port;
+        }
+
+        void touch() {
+            lastActivity = System.currentTimeMillis();
+        }
+
+        boolean isTimedOut() {
+            return System.currentTimeMillis() - lastActivity > REQUEST_TIMEOUT_MS;
         }
     }
 
