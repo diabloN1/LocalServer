@@ -219,6 +219,12 @@ public class Server {
             response.setHeader("Connection", "close");
         }
 
+        if (request.isNewSession()) {
+            response.setHeader(
+                    "Set-Cookie",
+                    "JSESSIONID=" + request.getSession(false).id + "; Path=/; HttpOnly");
+        }
+
         System.out.printf("[%s] %s %s -> %d%n",
                 new java.util.Date(), request.getMethod(),
                 request.getUri(), response.getStatusCode());
@@ -257,7 +263,7 @@ public class Server {
         for (SelectionKey key : selector.keys()) {
             if (!key.isValid())
                 continue;
-            
+
             Object att = key.attachment();
             if (!(att instanceof ClientContext))
                 continue;
@@ -279,7 +285,7 @@ public class Server {
     private void maybePurgeSessions() {
         long now = System.currentTimeMillis();
         if (now - lastSessionPurge > SESSION_PURGE_INTERVAL_MS) {
-            int purged = utils.Session.purgeExpired();
+            int purged = utils.SessionManager.purgeExpired();
             if (purged > 0)
                 System.out.println("[Server] Purged " + purged + " expired sessions");
             lastSessionPurge = now;
