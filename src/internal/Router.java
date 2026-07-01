@@ -1,5 +1,6 @@
 package internal;
 
+import handlers.DeleteHandler;
 import handlers.GetHandler;
 import handlers.PostHandler;
 import internal.http.ErrorBuilder;
@@ -50,6 +51,7 @@ public class Router {
 
             case "GET" -> new GetHandler().handle(request, route, vs, errorBuilder);
             case "POST" -> new PostHandler().handle(request, route, vs, errorBuilder);
+            case "DELETE" -> new DeleteHandler().handle(request, route, vs, errorBuilder);
             default -> errorBuilder.buildError(405);
         };
     }
