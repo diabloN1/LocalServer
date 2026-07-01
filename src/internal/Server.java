@@ -102,6 +102,7 @@ public class Server {
                 }
             }
 
+            checkTimeouts();
             maybePurgeSessions();
         }
 
@@ -248,6 +249,29 @@ public class Server {
             } else {
                 ctx.writeBuffer = null;
                 key.interestOps(SelectionKey.OP_READ);
+            }
+        }
+    }
+
+    private void checkTimeouts() {
+        for (SelectionKey key : selector.keys()) {
+            if (!key.isValid())
+                continue;
+            
+            Object att = key.attachment();
+            if (!(att instanceof ClientContext))
+                continue;
+
+            ClientContext ctx = (ClientContext) att;
+            if (ctx.isTimedOut()) {
+                System.out.println("[Server] Timeout on client connection");
+                // Send 408 (timeout) if no request has been treated yet
+                if (ctx.writeBuffer == null) {
+                    HttpResponse timeout = new ErrorBuilder(null).buildError(408);
+                    sendResponse(key, ctx, timeout, true);
+                } else {
+                    closeKey(key);
+                }
             }
         }
     }
