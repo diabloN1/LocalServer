@@ -4,6 +4,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import utils.Cookie;
+import utils.SessionManager;
+import utils.SessionManager.Session;
+import utils.SessionManager.SessionResult;
 
 public class HttpRequest {
 
@@ -12,6 +15,10 @@ public class HttpRequest {
     private String httpVersion;
     private String path;
     private String queryString = "";
+
+    private Session session;
+    private boolean sessionResolved = false;
+    private boolean newSession = false;
 
     final Map<String, String> headers = new LinkedHashMap<>();
     final Map<String, String> queryParams = new LinkedHashMap<>();
@@ -85,6 +92,14 @@ public class HttpRequest {
         return body;
     }
 
+    public String getCookie(String key) {
+        Cookie cookie = cookies.get(key);
+        if (cookie == null)
+            return null;
+
+        return cookie.getValue();
+    }
+
     public int getContentLength() {
         String v = headers.get("content-length");
         if (v == null)
@@ -100,6 +115,30 @@ public class HttpRequest {
         return headers.get(name.toLowerCase());
     }
 
+    public Session getSession() {
+        return getSession(true);
+    }
+
+    public Session getSession(boolean createIfNotExists) {
+        if (sessionResolved)
+            return session;
+
+        String id = getCookie("JSESSIONID");
+        if (!createIfNotExists) {
+            Session session = SessionManager.get(id);
+            return session;
+        }
+
+        SessionResult sessionResult = SessionManager.getOrCreate(id);
+        session = sessionResult.session();
+        newSession = sessionResult.created();
+        sessionResolved = true;
+        return session;
+    }
+
+    public Boolean isNewSession() {
+        return newSession;
+    }
     // ---- Setters ----
 
     private void setUri(String raw) {
@@ -141,10 +180,5 @@ public class HttpRequest {
         } catch (Exception e) {
             return s;
         }
-    }
-
-    @Override
-    public String toString() {
-        return method + " " + uri + " " + httpVersion;
     }
 }
