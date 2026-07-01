@@ -3,18 +3,21 @@ package utils;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class Session {
+public class SessionManager {
 
     public static final String SESSION_COOKIE = "JSESSIONID";
     private static final long SESSION_TIMEOUT_MS = 30 * 60 * 1000;
-    private static final Map<String, SessionData> sessions = new ConcurrentHashMap<>();
+    private static final Map<String, Session> sessions = new ConcurrentHashMap<>();
 
-    public static class SessionData {
+    public record SessionResult(Session session, boolean created) {
+    }
+
+    public static class Session {
         public final String id;
         public final Map<String, Object> attributes = new ConcurrentHashMap<>();
         public long lastAccess = System.currentTimeMillis();
 
-        public SessionData(String id) {
+        public Session(String id) {
             this.id = id;
         }
 
@@ -27,24 +30,25 @@ public class Session {
         }
     }
 
-    public static String[] getOrCreate(String sessionId) {
+    public static SessionResult getOrCreate(String sessionId) {
         if (sessionId != null && sessions.containsKey(sessionId)) {
-            SessionData sd = sessions.get(sessionId);
-            if (!sd.isExpired()) {
-                sd.touch();
-                return new String[] { sessionId, "false" };
+            Session session = sessions.get(sessionId);
+            if (!session.isExpired()) {
+                session.touch();
+                return new SessionResult(session, false);
             } else
                 sessions.remove(sessionId);
         }
         String newId = generateId();
-        sessions.put(newId, new SessionData(newId));
-        return new String[] { newId, "true" };
+        Session newSession = new Session(newId);
+        sessions.put(newId, newSession);
+        return new SessionResult(newSession, true);
     }
 
-    public static SessionData get(String sessionId) {
+    public static Session get(String sessionId) {
         if (sessionId == null)
             return null;
-        SessionData sd = sessions.get(sessionId);
+        Session sd = sessions.get(sessionId);
         if (sd != null && sd.isExpired()) {
             sessions.remove(sessionId);
             return null;
@@ -60,7 +64,7 @@ public class Session {
 
     public static int purgeExpired() {
         int count = 0;
-        Iterator<Map.Entry<String, SessionData>> it = sessions.entrySet().iterator();
+        Iterator<Map.Entry<String, Session>> it = sessions.entrySet().iterator();
         while (it.hasNext()) {
             if (it.next().getValue().isExpired()) {
                 it.remove();
