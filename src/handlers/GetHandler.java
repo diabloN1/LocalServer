@@ -54,6 +54,15 @@ public class GetHandler {
                     Path indexPath = fullPath.resolve(route.index).normalize();
 
                     if (indexPath.startsWith(rootPath) && indexPath.toFile().exists()) {
+                        
+                        // Test sessions
+                        // Session session = request.getSession();
+                        // var helloValue = session.attributes.getOrDefault("hello", "");
+                        // if (helloValue != "") {
+                        //     System.out.println(helloValue);
+                        // }
+                        // session.attributes.put("hello", "123");
+                        
                         return FileManager.serveFile(indexPath.toFile(), request, errorHandler);
                     }
                 }

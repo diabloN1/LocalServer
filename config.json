@@ -17,13 +17,13 @@
       "routes": [
         {
           "path": "/",
-          "methods": ["GET", "POST", "DELETE"],
+          "methods": ["GET", "POST"],
           "root": "./www",
           "index": "index.html"
         },
         {
           "path": "/upload",
-          "methods": ["POST", "GET"],
+          "methods": ["POST", "GET", "DELETE"],
           "root": "./www/uploads",
           "directory_listing": true
         },
